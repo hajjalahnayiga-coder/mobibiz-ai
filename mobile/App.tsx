@@ -1,5 +1,5 @@
-// Mobile app entry point with Firebase initialization
-import React, { useEffect, useState } from 'react';
+// Mobile app entry point
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
@@ -18,27 +18,22 @@ SplashScreen.keepAsync();
 const Stack = createNativeStackNavigator();
 
 /**
- * Initialize Firebase once at app startup
+ * Initialize Firebase synchronously before any React components render.
+ * This must happen at module level to avoid race conditions with context providers.
  */
-let firebaseInitialized = false;
-
-function initializeApp() {
-  if (!firebaseInitialized) {
-    try {
-      initializeFirebase();
-      firebaseInitialized = true;
-      console.log('Firebase initialized successfully');
-    } catch (error) {
-      console.error('Firebase initialization error:', error);
-      // In a real app, you might show an error screen here
-      // For now, we'll let it fail when services try to use Firebase
-    }
-  }
+try {
+  initializeFirebase();
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  // Firebase initialization errors will be thrown to the app
+  // This prevents the app from running in an invalid state
+  throw error;
 }
 
 /**
- * Main app navigator that switches between Auth and App stacks
- * This component uses the useAuth hook, so it must be inside AuthProvider
+ * Main app navigator that switches between Auth and App stacks.
+ * This component uses the useAuth hook, so it must be inside AuthProvider.
  */
 function MainNavigator() {
   const { state } = useAuth();
@@ -70,7 +65,8 @@ function MainNavigator() {
 }
 
 /**
- * Root component with all providers and navigation
+ * Root component with all providers and navigation.
+ * Firebase has already been initialized before this mounts.
  */
 function RootApp() {
   return (
@@ -86,14 +82,10 @@ function RootApp() {
 }
 
 /**
- * App entry point
+ * App entry point.
+ * Firebase initialization has already occurred at module load time.
  */
 export default function App() {
-  // Initialize Firebase once
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
   // Hide splash screen after a short delay
   useEffect(() => {
     const hideSplash = async () => {
